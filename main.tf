@@ -2,10 +2,23 @@ variable "cloudinit_template_name" {
   type = string
 }
 
+locals {
+  proxmox_node_list = jsondecode(data.sops_file.secrets.data["proxmox_nodes"])
+  num_proxmox_nodes = length(local.proxmox_node_list)
+}
+
 resource "proxmox_vm_qemu" "k8s-1" {
-  count = 1
-  name = "k8s-1${count.index + 1}"
-  target_node = data.sops_file.secrets.data["proxmox_node"]
+  count = 5
+
+  lifecycle {
+    precondition {
+      condition     = local.num_proxmox_nodes > 0
+      error_message = "The 'proxmox_nodes' list in secrets.enc.yaml must not be empty and must be a valid JSON array string."
+    }
+  }
+  
+  name          = "k8s-1${count.index + 1}"
+  target_node   = element(local.proxmox_node_list, count.index % local.num_proxmox_nodes)
   clone = var.cloudinit_template_name
   full_clone = true
   os_type = "cloud-init"

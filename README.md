@@ -37,7 +37,7 @@ pveum user token add terraform-prov@pve mytoken
 Create an alias to run opentofu from container
 
 ```bash
-alias tofu='docker run -it -e PM_API_TOKEN_ID="terraform-prov@pve!mytoken" -e PM_API_TOKEN_SECRET="<secret-key>" -v $HOME/.config/sops/age/keys.txt:/root/.config/sops/age/keys.txt -v ${PWD}:/app -w /app ghcr.io/opentofu/opentofu:latest '
+alias tofu='docker run -it -v $HOME/.config/sops/age/keys.txt:/.config/sops/age/keys.txt -v ${PWD}:/app -w /app --user 1000:1000 ghcr.io/opentofu/opentofu:latest '
 ```
 
 Run tofu init
