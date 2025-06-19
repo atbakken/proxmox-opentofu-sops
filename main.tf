@@ -2,13 +2,17 @@ variable "cloudinit_template_name" {
   type = string
 }
 
+variable "name_prefix" {
+  type = string
+}
+
 locals {
   proxmox_node_list = jsondecode(data.sops_file.secrets.data["proxmox_nodes"])
   num_proxmox_nodes = length(local.proxmox_node_list)
 }
 
-resource "proxmox_vm_qemu" "k8s-1" {
-  count = 5
+resource "proxmox_vm_qemu" "vm-cluster" {
+  count = 3
 
   lifecycle {
     precondition {
@@ -17,7 +21,7 @@ resource "proxmox_vm_qemu" "k8s-1" {
     }
   }
   
-  name          = "k8s-1${count.index + 1}"
+  name          = "${var.name_prefix}${count.index + 1}"
   target_node   = element(local.proxmox_node_list, count.index % local.num_proxmox_nodes)
   clone = var.cloudinit_template_name
   full_clone = true
@@ -83,13 +87,13 @@ resource "proxmox_vm_qemu" "k8s-1" {
     primary_gpu = true
   }
 
-  ciuser = "ansible"
-  cipassword = "test1"
+  ciuser = data.sops_file.secrets.data["ciuser"]
+  cipassword = data.sops_file.secrets.data["cipassword"]
   ciupgrade = true
   ipconfig0 = "ip=192.168.50.1${count.index + 1}/24,gw=192.168.50.1"
   ipconfig1 = "ip=10.20.20.5${count.index + 1}/24"
   ipconfig2 = "ip=10.10.10.5${count.index + 1}/24"
-  searchdomain = "int.bakkens.ca"
+  searchdomain = data.sops_file.secrets.data["searchdomain"]
   nameserver = "192.168.56.2 192.168.40.42"
 
   sshkeys = <<EOF
