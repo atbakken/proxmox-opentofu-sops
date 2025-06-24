@@ -1,4 +1,42 @@
-.terraform
+# === Terraform ===
+*.tfstate
+*.tfstate.backup
+*.tfplan
+crash.log
+*.tfvars.json
 .terraform.lock.hcl
-terraform.tfstate
-terraform.tfstate.backup
+.terraform.tfstate.lock.info
+
+# Ignore entire .terraform directory (plugins, modules, etc.)
+.terraform/
+
+# Terraform CLI configuration file (can contain credentials)
+.terraform.rc
+terraform.rc
+
+# === Local/Editor Files ===
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.log
+
+# === Sensitive / Custom ===
+# Customize these if needed
+.decrypted~*
+private_*.pem
+*.key
+*.crt
+*.pem
+ssh_keys.auto.tfvars
+kubeconfig
