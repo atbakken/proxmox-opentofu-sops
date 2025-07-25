@@ -47,7 +47,7 @@ resource "proxmox_vm_qemu" "vm-cluster" {
     slot       = "scsi0"
     size       = "40G"
     type       = "disk"
-    storage    = "ceph-pool"
+    storage    = "local-lvm"
     discard    = true
     emulatessd = true
   }
@@ -55,7 +55,7 @@ resource "proxmox_vm_qemu" "vm-cluster" {
   disk {
     slot    = "ide2"
     type    = "cloudinit"
-    storage = "ceph-pool"
+    storage = "local-lvm"
   }
 
   network {
@@ -63,6 +63,7 @@ resource "proxmox_vm_qemu" "vm-cluster" {
     id     = 0
     bridge = "vmbr0"
     tag    = 50
+    mtu    = 1500
   }
 
   network {
@@ -89,13 +90,14 @@ resource "proxmox_vm_qemu" "vm-cluster" {
 
   ciuser       = data.sops_file.secrets.data["ciuser"]
   cipassword   = data.sops_file.secrets.data["cipassword"]
-  ciupgrade    = true
+  #cicustom      = "user=nfs-share:snippets/k8s-userconfig.yaml"
+  ciupgrade    = false
   ipconfig0    = "ip=192.168.50.1${count.index + 1}/24,gw=192.168.50.1"
-  ipconfig1    = "ip=10.20.20.5${count.index + 1}/24"
-  ipconfig2    = "ip=10.10.10.5${count.index + 1}/24"
   searchdomain = data.sops_file.secrets.data["searchdomain"]
   nameserver   = "192.168.56.2 192.168.40.42"
-
+  ipconfig1    = "ip=10.20.20.5${count.index + 1}/24"
+  ipconfig2    = "ip=10.10.10.5${count.index + 1}/24"
+  
   sshkeys = <<EOF
   ${data.sops_file.secrets.data["ssh_key"]}
   EOF

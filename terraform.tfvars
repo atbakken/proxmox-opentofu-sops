@@ -1,2 +1,2 @@
-cloudinit_template_name = "ubuntu25-template"
-name_prefix             = "k8s-1"
+cloudinit_template_name = "ubuntu-2404-cloudinit"
+name_prefix             = "k3s-"
