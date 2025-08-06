@@ -1,5 +1,5 @@
 # === Terraform ===
-*.tfstate
+*.tfstate*
 *.tfstate.backup
 *.tfplan
 crash.log
@@ -40,3 +40,4 @@ private_*.pem
 *.pem
 ssh_keys.auto.tfvars
 kubeconfig
+user-data-k3s*

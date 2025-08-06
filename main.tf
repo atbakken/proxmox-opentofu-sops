@@ -6,13 +6,38 @@ variable "name_prefix" {
   type = string
 }
 
+variable "vm_count" {
+  type = number
+  default = 3
+}
+
+resource "local_file" "cloud_init_user_data" {
+  count = var.vm_count
+  filename = "${path.module}/user-data-${var.name_prefix}${count.index + 1}.yml"
+  content = templatefile("${path.module}/user-data.tpl", {
+    hostname = "${var.name_prefix}${count.index + 1}"
+  })
+}
+
+resource "null_resource" "upload_user_data" {
+  count = var.vm_count
+
+  triggers = {
+    filename = "user-data-${var.name_prefix}${count.index +1}.yml"
+  }
+
+  provisioner "local-exec" {
+    command = "scp ${path.module}/user-data-${var.name_prefix}${count.index +1}.yml root@beelink1:/mnt/pve/nfs-share/snippets/"
+  }
+}
+
 locals {
   proxmox_node_list = jsondecode(data.sops_file.secrets.data["proxmox_nodes"])
   num_proxmox_nodes = length(local.proxmox_node_list)
 }
 
 resource "proxmox_vm_qemu" "vm-cluster" {
-  count = 3
+  count = var.vm_count
 
   lifecycle {
     precondition {
@@ -45,6 +70,15 @@ resource "proxmox_vm_qemu" "vm-cluster" {
 
   disk {
     slot       = "scsi0"
+    size       = "40G"
+    type       = "disk"
+    storage    = "local-lvm"
+    discard    = true
+    emulatessd = true
+  }
+
+  disk {
+    slot       = "scsi1"
     size       = "40G"
     type       = "disk"
     storage    = "local-lvm"
@@ -88,10 +122,7 @@ resource "proxmox_vm_qemu" "vm-cluster" {
     primary_gpu = true
   }
 
-  ciuser       = data.sops_file.secrets.data["ciuser"]
-  cipassword   = data.sops_file.secrets.data["cipassword"]
-  #cicustom      = "user=nfs-share:snippets/k8s-userconfig.yaml"
-  ciupgrade    = false
+  cicustom      = "user=nfs-share:snippets/user-data-${var.name_prefix}${count.index + 1}.yml"
   ipconfig0    = "ip=192.168.50.1${count.index + 1}/24,gw=192.168.50.1"
   searchdomain = data.sops_file.secrets.data["searchdomain"]
   nameserver   = "192.168.56.2 192.168.40.42"
@@ -101,4 +132,6 @@ resource "proxmox_vm_qemu" "vm-cluster" {
   sshkeys = <<EOF
   ${data.sops_file.secrets.data["ssh_key"]}
   EOF
+
+  depends_on = [null_resource.upload_user_data]
 }
